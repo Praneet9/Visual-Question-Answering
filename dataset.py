@@ -35,7 +35,7 @@ class ImageDataset(Dataset):
 
 class ViTFeatures(Dataset):
     
-    def __init__(self, dataset_path, features_folder, transform):
+    def __init__(self, dataset_path, features_folder):
         
         self.features_folder = features_folder
         self.dataset_path = dataset_path
@@ -47,7 +47,7 @@ class ViTFeatures(Dataset):
     
     def __getitem__(self, idx):
         
-        feat_path = self.features_paths[idx]
-        feat = np.load(feat_path)
+        feature_path = self.features_paths[idx]
+        feature = np.load(feature_path)
 
-        return feat
+        return feature
