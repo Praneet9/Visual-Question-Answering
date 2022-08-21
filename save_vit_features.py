@@ -1,69 +1,93 @@
 import timm
-from PIL import Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 import torch
-from glob import glob
 import os
 from tqdm import tqdm
 import numpy as np
+from dataset import ImageDataset
+from torch.utils import data as dataloader
+import argparse
 
+class SaveViTFeatures():
 
-def vit_features_w_gp(dataset_path, folder):
-    
-    model = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=0).cuda()
-    config = resolve_data_config({}, model=model)
-    transform = create_transform(**config)
-    
-    features_path = os.path.join(dataset_path, 'vit_features_w_global_pool')
-    if not os.path.exists(features_path):
-        os.mkdir(features_path)
-    
-    for img_path in tqdm(glob(os.path.join(dataset_path, folder, '*.jpg'))):
-        
-        image_name = os.path.split(img_path)[-1]
-        file_name = os.path.splitext(image_name)[0]
-        output_path = os.path.join(features_path, f'{file_name}.npy')
-        
-        img = Image.open(img_path).convert('RGB')
-        tensor = transform(img).unsqueeze(0).cuda() # transform and add batch dimension
+    def __init__(self, dataset_path, images_folder, with_global_pool=True):
 
-        with torch.no_grad():
-            out = model(tensor)
-        
-        np.save(output_path, out[0].cpu().numpy())
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def vit_features_wo_gp(dataset_path, folder):
-    
-    model = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=0, global_pool='').cuda()
-    config = resolve_data_config({}, model=model)
-    transform = create_transform(**config)
-    
-    features_path = os.path.join(dataset_path, 'vit_features_raw')
-    if not os.path.exists(features_path):
-        os.mkdir(features_path)
-    
-    for img_path in tqdm(glob(os.path.join(dataset_path, folder, '*.jpg'))):
-        
-        image_name = os.path.split(img_path)[-1]
-        file_name = os.path.splitext(image_name)[0]
-        output_path = os.path.join(features_path, f'{file_name}.npy')
-        
-        img = Image.open(img_path).convert('RGB')
-        tensor = transform(img).unsqueeze(0).cuda() # transform and add batch dimension
+        if with_global_pool:
+            self.model = timm.create_model('vit_base_patch16_224', 
+                                    pretrained=True, 
+                                    num_classes=0).eval().to(self.device)
+            config = resolve_data_config({}, model=self.model)
+            transform = create_transform(**config)
 
-        with torch.no_grad():
-            out = model(tensor)
+            self.features_path = os.path.join(dataset_path, 'vit_features_w_global_pool')
+            if not os.path.exists(self.features_path):
+                os.mkdir(self.features_path)
+
+        else:
+            self.model = timm.create_model('vit_base_patch16_224',
+                                    pretrained=True, 
+                                    num_classes=0,
+                                    global_pool='').eval().to(self.device)
+            config = resolve_data_config({}, model=self.model)
+            transform = create_transform(**config)
+
+            self.features_path = os.path.join(dataset_path, 'vit_features_raw')
+            if not os.path.exists(self.features_path):
+                os.mkdir(self.features_path)
         
-        np.save(output_path, out[0].cpu().numpy())
+        dataset = ImageDataset(dataset_path, images_folder, transform)
+        self.dataset = dataloader.DataLoader(dataset,
+                                            batch_size=4,
+                                            shuffle=True,
+                                            num_workers=2)
+    
+    def save_features(self):
+        
+        for batch in tqdm(self.dataset):
+            with torch.no_grad():
+                features = self.model(batch['img'].to(self.device)).cpu()
+
+            for idx, feat in enumerate(features):
+                
+                if type(batch['file_name']) is list:
+                    file_name = batch['file_name'][idx]
+                else:
+                    file_name = batch['file_name']
+
+                output_path = os.path.join(self.features_path, f'{file_name}.npy')
+                np.save(output_path, feat.numpy())
+
+def parse_args():
+    
+    parser = argparse.ArgumentParser(
+        description="Save ViT intermediate features"
+    )
+    
+    parser.add_argument(
+        "--dataset", dest="dataset", type=str, required=True,
+        default='dataset/', help="Path to the dataset"
+    )
+    parser.add_argument(
+        "--images-path", dest="images_path", type=str, required=True,
+        help="Images folder"
+    )
+    parser.add_argument(
+        "--with-global-pool", dest="with_global_pool", action='store_false',
+        help="Pretrained ViT with global pooling layer"
+    )
+
+    return parser.parse_args()
 
 if __name__ == "__main__":
 
-    DATASET_PATH = 'dataset/'
-    IMAGES_FOLDER = 'val2014'
+    args = parse_args()
 
-    # Save ViT features without global_pool
-    vit_features_wo_gp(DATASET_PATH, IMAGES_FOLDER)
+    DATASET_PATH = args.dataset
+    IMAGES_FOLDER = args.images_path
 
-    # Save ViT features with global_pool
-    vit_features_w_gp(DATASET_PATH, IMAGES_FOLDER)
+    SaveViTFeatures(DATASET_PATH, 
+                    IMAGES_FOLDER, 
+                    args.with_global_pool).save_features()
