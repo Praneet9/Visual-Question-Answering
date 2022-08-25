@@ -14,7 +14,6 @@ class FilterQuestions():
         self.filtered_ids = {}
         self.question_txt = {}
         self.answer_txt = {}
-        self.threshold = 0.5
 
     def get_color_n_count_ques(self):
 
@@ -40,10 +39,7 @@ class FilterQuestions():
                         (i['answer_confidence'] == 'yes') \
                         else 0 for i in item['answers']]
             
-            if sum(choices)/len(choices) < self.threshold:
-                confidence = 0
-            else:
-                confidence = 1
+            confidence = sum(choices)/len(choices)
             
             self.answer_txt[ques_id] = {
                 'text': answer,
