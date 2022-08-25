@@ -66,17 +66,30 @@ class FilterQuestions():
         print("Aggregating data...")
         filtered_data = {}
         
+        total_answers = 0
+        skipped_answers = 0
+        ans_vocab = set()
+
         for img_id in self.filtered_ids.keys():
             question_ids = list(set(self.filtered_ids[img_id]))
 
             for question_id in question_ids:
+                total_answers += 1
+                ans = self.answer_txt[question_id]['text']
+                if len(ans.split()) > 1:
+                    skipped_answers += 1
+                    continue
+
                 filtered_data[question_id] = {
                     'image_id': img_id,
                     'question': self.question_txt[question_id],
                     'answer': self.answer_txt[question_id]['text'],
                     'confidence': self.answer_txt[question_id]['confidence']
                 }
+                ans_vocab.add(ans)
         
+        print(f"{skipped_answers}/{total_answers} answers were skipped as they had more than 1 word!")
+        print(f"Answer vocab len: {len(ans_vocab)}")
         return filtered_data
 
 
