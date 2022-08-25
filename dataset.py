@@ -35,25 +35,6 @@ class ImageDataset(Dataset):
             'img': tensor
         }
 
-class ViTFeatures(Dataset):
-    
-    def __init__(self, dataset_path, features_folder):
-        
-        self.features_folder = features_folder
-        self.dataset_path = dataset_path
-        self.features_paths = list(glob(os.path.join(dataset_path, features_folder, '*.npy')))
-        
-    def __len__(self):
-        
-        return len(self.features_paths)
-    
-    def __getitem__(self, idx):
-        
-        feature_path = self.features_paths[idx]
-        feature = np.load(feature_path)
-
-        return feature
-
 class VQADataset(Dataset):
 
     def __init__(self, dataset_path, 
