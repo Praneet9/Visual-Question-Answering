@@ -80,8 +80,8 @@ class FilterDataset():
 
                 filtered_data[question_id] = {
                     'image_id': img_id,
-                    'question': self.question_txt[question_id],
-                    'answer': self.answer_txt[question_id]['text'],
+                    'question': self.question_txt[question_id].lower().replace('?', ' ?'),
+                    'answer': self.answer_txt[question_id]['text'].lower(),
                     'confidence': self.answer_txt[question_id]['confidence']
                 }
         print(f"{skipped_answers}/{total_answers} answers were skipped as they had more than 1 word!")
