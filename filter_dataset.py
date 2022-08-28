@@ -115,6 +115,9 @@ class FilterDataset():
 
         data.update(new_data)
         
+        if not self.save_ans_vocab:
+            return data
+        
         count_threshold = 10
         print(f"Filtering answers with count less than {count_threshold}")
         counts = Counter([i['answer'] for i in data.values()])
