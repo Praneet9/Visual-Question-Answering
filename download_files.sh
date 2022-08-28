@@ -34,10 +34,9 @@ unzip -q dataset/train2014.zip -d dataset/
 unzip -q dataset/val2014.zip -d dataset/
 unzip -q dataset/test2015.zip -d dataset/
 
-echo "Downloading ********************************** Complementary Pairs... **********************************"
-wget -P dataset/ https://s3.amazonaws.com/cvmlp/vqa/mscoco/vqa/v2_Complementary_Pairs_Train_mscoco.zip
-wget -P dataset/ https://s3.amazonaws.com/cvmlp/vqa/mscoco/vqa/v2_Complementary_Pairs_Val_mscoco.zip
-
-echo "Unzipping ********************************** Complementary Pairs... **********************************"
-unzip -q dataset/v2_Complementary_Pairs_Train_mscoco.zip -d dataset/
-unzip -q dataset/v2_Complementary_Pairs_Val_mscoco.zip -d dataset/
+echo "********************************** Structuring Downloaded Data **********************************"
+mkdir -p dataset/zip_files
+mkdir -p embeddings/zip_files
+mv dataset/*.zip dataset/zip_files/
+mv embeddings/*.zip embeddings/zip_files
+mv embeddings/*.txt embeddings/zip_files
