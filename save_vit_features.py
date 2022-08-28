@@ -30,8 +30,8 @@ class SaveViTFeatures():
                                             num_classes=0,
                                             global_pool='').eval().to(self.device)
         
-        config = resolve_data_config({}, model=self.model)
-        transform = create_transform(**config)
+        timm_config = resolve_data_config({}, model=self.model)
+        transform = create_transform(**timm_config)
 
         self.features_path = os.path.join(dataset_path, features_dir)
         if not os.path.exists(self.features_path):
