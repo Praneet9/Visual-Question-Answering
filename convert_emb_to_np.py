@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import torch
 import os
-
+import yaml
 
 def convert_emb(embedding_name):
 
@@ -51,6 +51,8 @@ def convert_emb(embedding_name):
 
 if __name__ == '__main__':
 
-    EMBEDDING = 'glove.6B.300d.txt'
+    with open('config.yaml', 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    EMBEDDING = config['glove_embs']
 
     convert_emb(EMBEDDING)

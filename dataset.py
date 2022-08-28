@@ -7,14 +7,15 @@ import numpy as np
 from filter_dataset import FilterDataset
 import torch
 import json
+import yaml
 
 class ImageDataset(Dataset):
     
-    def __init__(self, dataset_path, image_folder, transform):
+    def __init__(self, config, data_type, transform):
         
-        self.image_folder = image_folder
-        self.dataset_path = dataset_path
-        self.image_paths = list(glob(os.path.join(dataset_path, image_folder, '*.jpg')))
+        self.image_folder = config[data_type]['dataset_path']
+        self.dataset_path = config['dataset_path']
+        self.image_paths = list(glob(os.path.join(self.dataset_path, self.image_folder, '*.jpg')))
         self.transform = transform
         
     def __len__(self):
@@ -38,43 +39,42 @@ class ImageDataset(Dataset):
 
 class VQADataset(Dataset):
 
-    def __init__(self, dataset_path, 
-                 features_dir, 
-                 questions_path, 
-                 answers_path, 
+    def __init__(self, config,
+                 data_type,
                  vocab,
                  ans_vocab=None):
         
-        self.features_dir = features_dir
-        self.dataset_path = dataset_path
+        self.config = config
+        self.data_type = data_type
+        self.features_dir = self.config[self.data_type]['features_path']
+        self.dataset_path = self.config['dataset_path']
         self.token2idx = {}
         self.idx2token = {}
         self.ans_vocab = ans_vocab
-        self.confidence_threshold = 0.5
-        self.max_seq_length = 20
+        self.max_seq_length = self.config['max_seq_length']
         for idx, word in enumerate(vocab):
             if self.token2idx.get(word, None) is None:
                 self.token2idx[word] = idx
                 self.idx2token[idx] = word
-        self.samples = self.filter_samples(questions_path, answers_path)
+        self.samples = self.filter_samples()
         self.sample_ids = list(self.samples.keys())
     
     def __len__(self):
 
         return len(self.sample_ids)
     
-    def filter_samples(self, questions_path, answers_path):
+    def filter_samples(self):
 
         if self.ans_vocab is None:
             save_ans_vocab = True
         else:
             save_ans_vocab = False
         
-        data = FilterDataset(self.dataset_path, questions_path, 
-                             answers_path, save_ans_vocab).filter()
+        data = FilterDataset(self.config, 
+                             self.data_type).filter()
         
         if save_ans_vocab:
-            ans_vocab_path = os.path.join(self.dataset_path, 'answer_vocab.json')
+            ans_vocab_path = os.path.join(self.dataset_path, self.config['ans_vocab_path'])
             with open(ans_vocab_path, 'r') as f:
                 self.ans_vocab = json.load(f)
         
@@ -100,8 +100,8 @@ class VQADataset(Dataset):
         answer = self.samples[self.sample_ids[idx]]['answer']
         feature_path = os.path.join(self.dataset_path, self.features_dir, f'{img_id}.npy')
 
-        # features = np.zeros((768, 1))
-        features = np.load(feature_path)
+        features = np.zeros((1, 768))
+        # features = np.load(feature_path)
 
         question = [self.token2idx.get(i, self.token2idx['<unk>']) for i in question.split()]
         question += [self.token2idx['<pad>']] * (self.max_seq_length - len(question))
@@ -117,23 +117,20 @@ class VQADataset(Dataset):
 
 if __name__ == '__main__':
 
-    dataset_path = 'dataset'
-    questions_path = 'v2_OpenEnded_mscoco_train2014_questions.json'
-    answers_path = 'v2_mscoco_train2014_annotations.json'
+    with open('config.yaml', 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    data_type = 'validation_data'
     ans_vocab = None
 
-    features_path = 'vit_features_wo_gp'
-    vocab_path = os.path.join('embeddings', 'vocab_300d.npy')
+    vocab_path = os.path.join(config['embeddings_path'], config['vocab'])
 
-    # with open(os.path.join(dataset_path, 'answer_vocab.json'), 'r') as f:
-    #     ans_vocab = json.load(f)
+    with open(os.path.join(config['dataset_path'], config['ans_vocab_path']), 'r') as f:
+        ans_vocab = json.load(f)
 
     vocab = np.load(vocab_path)
 
-    dataset = VQADataset(dataset_path, 
-                         features_path, 
-                         questions_path, 
-                         answers_path,
+    dataset = VQADataset(config, 
+                         data_type,
                          vocab,
                          ans_vocab)
     

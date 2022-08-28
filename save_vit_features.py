@@ -7,36 +7,35 @@ from tqdm import tqdm
 import numpy as np
 from dataset import ImageDataset
 from torch.utils import data as dataloader
-import argparse
+import yaml
 
 class SaveViTFeatures():
 
-    def __init__(self, dataset_path, images_folder, with_global_pool=True):
+    def __init__(self, config, data_type):
 
+        dataset_path = config['dataset_path']
+        with_global_pool = config['with_global_pool']
+        images_folder = config[data_type]['images_path']
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         if with_global_pool:
+            features_dir = config[data_type]['features_path']
             self.model = timm.create_model('vit_base_patch16_224', 
-                                    pretrained=True, 
-                                    num_classes=0).eval().to(self.device)
-            config = resolve_data_config({}, model=self.model)
-            transform = create_transform(**config)
-
-            self.features_path = os.path.join(dataset_path, 'vit_features_w_global_pool')
-            if not os.path.exists(self.features_path):
-                os.mkdir(self.features_path)
-
+                                            pretrained=True, 
+                                            num_classes=0).eval().to(self.device)
         else:
+            features_dir = config[data_type]['raw_features_path']
             self.model = timm.create_model('vit_base_patch16_224',
-                                    pretrained=True, 
-                                    num_classes=0,
-                                    global_pool='').eval().to(self.device)
-            config = resolve_data_config({}, model=self.model)
-            transform = create_transform(**config)
+                                            pretrained=True, 
+                                            num_classes=0,
+                                            global_pool='').eval().to(self.device)
+        
+        config = resolve_data_config({}, model=self.model)
+        transform = create_transform(**config)
 
-            self.features_path = os.path.join(dataset_path, 'vit_features_raw')
-            if not os.path.exists(self.features_path):
-                os.mkdir(self.features_path)
+        self.features_path = os.path.join(dataset_path, features_dir)
+        if not os.path.exists(self.features_path):
+            os.mkdir(self.features_path)
         
         dataset = ImageDataset(dataset_path, images_folder, transform)
         self.dataset = dataloader.DataLoader(dataset,
@@ -60,34 +59,12 @@ class SaveViTFeatures():
                 output_path = os.path.join(self.features_path, f'{file_name}.npy')
                 np.save(output_path, feat.numpy())
 
-def parse_args():
-    
-    parser = argparse.ArgumentParser(
-        description="Save ViT intermediate features"
-    )
-    
-    parser.add_argument(
-        "--dataset", dest="dataset", type=str, required=True,
-        default='dataset/', help="Path to the dataset"
-    )
-    parser.add_argument(
-        "--images-path", dest="images_path", type=str, required=True,
-        help="Images folder"
-    )
-    parser.add_argument(
-        "--with-global-pool", dest="with_global_pool", action='store_false',
-        help="Pretrained ViT with global pooling layer"
-    )
-
-    return parser.parse_args()
 
 if __name__ == "__main__":
 
-    args = parse_args()
+    with open('config.yaml', 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    data_type = 'validation_data'
 
-    DATASET_PATH = args.dataset
-    IMAGES_FOLDER = args.images_path
-
-    SaveViTFeatures(DATASET_PATH, 
-                    IMAGES_FOLDER, 
-                    args.with_global_pool).save_features()
+    SaveViTFeatures(config, 
+                    data_type).save_features()

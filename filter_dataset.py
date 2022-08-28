@@ -1,17 +1,18 @@
 import json
 import os
 from collections import Counter
-
+import yaml
 
 class FilterDataset():
 
-    def __init__(self, dataset_path, questions_path, answers_path, save_ans_vocab=False):
+    def __init__(self, config, data_type):
         
-        self.save_ans_vocab = save_ans_vocab
-        self.dataset_path = dataset_path
-        with open(os.path.join(dataset_path, questions_path), 'r') as f:
+        self.config = config
+        self.save_ans_vocab = config[data_type]['save_ans_vocab']
+        self.dataset_path = config['dataset_path']
+        with open(os.path.join(self.dataset_path, config[data_type]['questions']), 'r') as f:
             self.questions = json.load(f).get('questions')
-        with open(os.path.join(dataset_path, answers_path), 'r') as f:
+        with open(os.path.join(self.dataset_path, config[data_type]['answers']), 'r') as f:
             self.answers = json.load(f).get('annotations')
         
         self.filtered_ids = {}
@@ -118,7 +119,7 @@ class FilterDataset():
         if not self.save_ans_vocab:
             return data
         
-        count_threshold = 10
+        count_threshold = self.config['min_count_threshold']
         print(f"Filtering answers with count less than {count_threshold}")
         counts = Counter([i['answer'] for i in data.values()])
         unique_vocab = set()
@@ -142,12 +143,12 @@ class FilterDataset():
         
         return data
     
-    def save_vocab(self, dataset_path, data):
+    def save_vocab(self, data):
         
         ans_vocab = sorted(list(set([i['answer'] for i in data.values()])))
         ans_vocab = {idx:ans for idx, ans in enumerate(ans_vocab)}
         
-        vocab_path = os.path.join(dataset_path, 'answer_vocab.json')
+        vocab_path = os.path.join(self.config['dataset_path'], self.config['ans_vocab_path'])
         
         with open(vocab_path, 'w') as f:
             json.dump(ans_vocab, f)
@@ -161,16 +162,15 @@ class FilterDataset():
         filtered_data = self.filter_ans(filtered_data)
         
         if self.save_ans_vocab:
-            self.save_vocab(self.dataset_path, filtered_data)
+            self.save_vocab(filtered_data)
         
         return filtered_data
 
 
 if __name__ == '__main__':
 
-    dataset_path = 'dataset'
-    questions_path = 'v2_OpenEnded_mscoco_train2014_questions.json'
-    answers_path = 'v2_mscoco_train2014_annotations.json'
-    save_ans_vocab = True
+    with open('config.yaml', 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    data_type = 'train_data'
 
-    data = FilterDataset(dataset_path, questions_path, answers_path, save_ans_vocab).filter()
+    data = FilterDataset(config, data_type).filter()
