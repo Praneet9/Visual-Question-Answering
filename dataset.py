@@ -2,7 +2,10 @@ from torch.utils.data import Dataset
 from torch.utils import data as dataloader
 from glob import glob
 import os
+import timm
 from PIL import Image
+from timm.data import resolve_data_config
+from timm.data.transforms_factory import create_transform
 import numpy as np
 from filter_dataset import FilterDataset
 import torch
@@ -42,12 +45,15 @@ class VQADataset(Dataset):
     def __init__(self, config,
                  data_type,
                  vocab,
+                 transform,
                  ans_vocab=None):
         
         self.config = config
         self.data_type = data_type
+        self.transform = transform
         self.features_dir = self.config[self.data_type]['features_path']
         self.dataset_path = self.config['dataset_path']
+        self.image_folder = self.config[self.data_type]['images_path']
         self.token2idx = {}
         self.idx2token = {}
         self.ans_vocab = ans_vocab
@@ -98,10 +104,16 @@ class VQADataset(Dataset):
         img_id = self.samples[self.sample_ids[idx]]['image_id']
         question = self.samples[self.sample_ids[idx]]['question']
         answer = self.samples[self.sample_ids[idx]]['answer']
-        feature_path = os.path.join(self.dataset_path, self.features_dir, f'{img_id}.npy')
+        
+        # feature_path = os.path.join(self.dataset_path, self.features_dir, f'{img_id}.npy')
+        # image = np.zeros((1, 768))
+        # image = np.load(feature_path)
 
-        features = np.zeros((1, 768))
-        # features = np.load(feature_path)
+        image_path = os.path.join(self.dataset_path, 
+                                  self.image_folder,
+                                  f'COCO_{self.image_folder}_000000{img_id}.jpg')
+        img = Image.open(image_path).convert('RGB')
+        image = self.transform(img)
 
         question = [self.token2idx.get(i, self.token2idx['<unk>']) for i in question.split()]
         question += [self.token2idx['<pad>']] * (self.max_seq_length - len(question))
@@ -109,9 +121,9 @@ class VQADataset(Dataset):
         answer = self.ans2idx[answer]
 
         return {
-            'image': torch.from_numpy(features),
+            'image': torch.from_numpy(image),
             'question': torch.tensor(question),
-            'answer': torch.tensor(answer)
+            'answer': torch.tensor(answer).type(torch.LongTensor)
         }
 
 
@@ -129,9 +141,18 @@ if __name__ == '__main__':
 
     vocab = np.load(vocab_path)
 
+    if config['with_global_pool']:
+        vit_model = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=0).eval()
+    else:
+        vit_model = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=0, global_pool='').eval()
+
+    timm_config = resolve_data_config({}, model=vit_model)
+    transform = create_transform(**timm_config)
+
     dataset = VQADataset(config, 
                          data_type,
                          vocab,
+                         transform,
                          ans_vocab)
     
     item = next(iter(dataset))
