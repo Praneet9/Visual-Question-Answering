@@ -109,9 +109,10 @@ class VQADataset(Dataset):
         # image = np.zeros((1, 768))
         # image = np.load(feature_path)
 
+        padded_zeros = '0'*(12 - len(str(img_id)))
         image_path = os.path.join(self.dataset_path, 
                                   self.image_folder,
-                                  f'COCO_{self.image_folder}_000000{img_id}.jpg')
+                                  f'COCO_{self.image_folder}_{padded_zeros}{img_id}.jpg')
         img = Image.open(image_path).convert('RGB')
         image = self.transform(img)
 
@@ -121,7 +122,7 @@ class VQADataset(Dataset):
         answer = self.ans2idx[answer]
 
         return {
-            'image': torch.from_numpy(image),
+            'image': image,
             'question': torch.tensor(question),
             'answer': torch.tensor(answer).type(torch.LongTensor)
         }
