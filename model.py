@@ -4,7 +4,7 @@ import torch
 
 class ModelGP(nn.Module):
     
-    def __init__(self, output_vocab, seq_len=20):
+    def __init__(self, output_vocab, seq_len=24):
         
         super().__init__()
         

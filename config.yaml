@@ -21,6 +21,6 @@ glove_embs: 'glove.6B.300d.txt'
 embeddings: 'embeddings_glove.6B.300d.npy'
 vocab: 'vocab_glove.6B.300d.npy'
 with_global_pool: True
-max_seq_length: 20
+max_seq_length: 24
 min_count_threshold: 10
 batch_size: 16
