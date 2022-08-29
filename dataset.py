@@ -16,7 +16,7 @@ class ImageDataset(Dataset):
     
     def __init__(self, config, data_type, transform):
         
-        self.image_folder = config[data_type]['dataset_path']
+        self.image_folder = config[data_type]['images_path']
         self.dataset_path = config['dataset_path']
         self.image_paths = list(glob(os.path.join(self.dataset_path, self.image_folder, '*.jpg')))
         self.transform = transform
@@ -89,7 +89,7 @@ class VQADataset(Dataset):
         total_samples = len(data)
         samples = {}
         for key in data.keys():
-            if self.token2idx.get(data[key]['answer'], None) is None:
+            if self.ans2idx.get(data[key]['answer'], None) is None:
                 continue
             samples[key] = data[key].copy()
 
@@ -105,11 +105,13 @@ class VQADataset(Dataset):
         question = self.samples[self.sample_ids[idx]]['question']
         answer = self.samples[self.sample_ids[idx]]['answer']
         
-        # feature_path = os.path.join(self.dataset_path, self.features_dir, f'{img_id}.npy')
-        # image = np.zeros((1, 768))
+        padded_zeros = '0'*(12 - len(str(img_id)))
+
+        # feature_path = os.path.join(self.dataset_path, 
+        #                           self.features_dir,
+        #                           f'COCO_{self.image_folder}_{padded_zeros}{img_id}.npy')
         # image = np.load(feature_path)
 
-        padded_zeros = '0'*(12 - len(str(img_id)))
         image_path = os.path.join(self.dataset_path, 
                                   self.image_folder,
                                   f'COCO_{self.image_folder}_{padded_zeros}{img_id}.jpg')

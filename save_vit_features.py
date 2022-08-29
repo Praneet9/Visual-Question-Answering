@@ -37,7 +37,7 @@ class SaveViTFeatures():
         if not os.path.exists(self.features_path):
             os.mkdir(self.features_path)
         
-        dataset = ImageDataset(dataset_path, images_folder, transform)
+        dataset = ImageDataset(config, data_type, transform)
         self.dataset = dataloader.DataLoader(dataset,
                                             batch_size=4,
                                             shuffle=True,
