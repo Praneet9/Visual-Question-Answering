@@ -50,7 +50,7 @@ class ModelRaw(nn.Module):
         embs = self.flatten(embs)
         embs = self.fc_1(embs).unsqueeze(1)
         
-        fused = torch.mul(image, embs)
+        fused = torch.add(image, embs)
         fused, _ = self.lstm_2(fused)
         
         return self.output(fused)
