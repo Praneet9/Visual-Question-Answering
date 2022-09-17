@@ -45,22 +45,14 @@ class VQADataset(Dataset):
     def __init__(self, config,
                  data_type,
                  vocab,
-                 transform,
                  ans_vocab=None):
         
         self.config = config
-
-        if not self.config['with_global_pool']:
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            # Without Global Pooling
-            self.vit_model = timm.create_model('vit_base_patch16_224', pretrained=True, 
-                                                num_classes=0, global_pool='').eval().to(self.device) 
-            timm_config = resolve_data_config({}, model=self.vit_model)
-            self.transform = create_transform(**timm_config)
-
         self.data_type = data_type
-        self.transform = transform
-        self.features_dir = self.config[self.data_type]['features_path']
+        if self.config['with_global_pool']:
+            self.features_dir = self.config[self.data_type]['features_path']
+        else:
+            self.features_dir = self.config[self.data_type]['raw_features_path']
         self.dataset_path = self.config['dataset_path']
         self.image_folder = self.config[self.data_type]['images_path']
         self.token2idx = {}
@@ -116,20 +108,10 @@ class VQADataset(Dataset):
         
         padded_zeros = '0'*(12 - len(str(img_id)))
 
-        if not self.config['with_global_pool']:
-
-            image_path = os.path.join(self.dataset_path, 
-                                    self.image_folder,
-                                    f'COCO_{self.image_folder}_{padded_zeros}{img_id}.jpg')
-            img = Image.open(image_path).convert('RGB')
-            image = self.transform(img)
-            with torch.no_grad():
-                image = self.vit_model(image.to(self.device)).cpu()
-        else:
-            feature_path = os.path.join(self.dataset_path, 
-                                      self.features_dir,
-                                      f'COCO_{self.image_folder}_{padded_zeros}{img_id}.npy')
-            image = np.load(feature_path)
+        feature_path = os.path.join(self.dataset_path, 
+                                    self.features_dir,
+                                    f'COCO_{self.image_folder}_{padded_zeros}{img_id}.npy')
+        image = torch.from_numpy(np.load(feature_path))
 
         question = [self.token2idx.get(i, self.token2idx['<unk>']) for i in question.split()]
         question += [self.token2idx['<pad>']] * (self.max_seq_length - len(question))
@@ -157,18 +139,9 @@ if __name__ == '__main__':
 
     vocab = np.load(vocab_path)
 
-    if config['with_global_pool']:
-        vit_model = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=0).eval()
-    else:
-        vit_model = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=0, global_pool='').eval()
-
-    timm_config = resolve_data_config({}, model=vit_model)
-    transform = create_transform(**timm_config)
-
     dataset = VQADataset(config, 
                          data_type,
                          vocab,
-                         transform,
                          ans_vocab)
     
     item = next(iter(dataset))
