@@ -20,7 +20,9 @@ ans_vocab_path: 'answer_vocab.json'
 glove_embs: 'glove.6B.300d.txt'
 embeddings: 'embeddings_glove.6B.300d.npy'
 vocab: 'vocab_glove.6B.300d.npy'
-with_global_pool: True
+with_global_pool: False
 max_seq_length: 24
 min_count_threshold: 10
 batch_size: 16
+epochs: 50
+top_classes: 5
