@@ -17,6 +17,7 @@ class Inference():
         self.config = config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model_path = model_path
+        self.total_answers = 71
         self.prepare_vocab()
 
     def prepare_vocab(self):
@@ -41,11 +42,11 @@ class Inference():
         if self.config['with_global_pool']:
             # With Global Pooling
             self.vit_model = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=0).eval().to(self.device)
-            self.model = ModelGP(71).eval().to(self.device)
+            self.model = ModelGP(self.total_answers).eval().to(self.device)
         else:
             # Without Global Pooling
             self.vit_model = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=0, global_pool='').eval().to(self.device)
-            self.model = ModelRaw(71).eval().to(self.device)
+            self.model = ModelRaw(self.total_answers).eval().to(self.device)
         timm_config = resolve_data_config({}, model=self.vit_model)
         self.transform = create_transform(**timm_config)
 
@@ -59,18 +60,38 @@ class Inference():
 
     def predict(self, image_path, question):
 
-        img = Image.open(image_path).convert('RGB')
+        if type(image_path) is str:
+            img = Image.open(image_path).convert('RGB')
+        else:
+            img = Image.fromarray(image_path)
+        
         image = self.transform(img).unsqueeze(0)
 
         question = [self.token2idx.get(i, self.token2idx['<unk>']) for i in question.split()]
         question += [self.token2idx['<pad>']] * (self.config['max_seq_length'] - len(question))
         question = torch.tensor(question).unsqueeze(0)
 
-        image = self.vit_model(image.to(self.device))
-        question = self.embedding_layer(question.to(self.device))
+        with torch.no_grad():
+            image = self.vit_model(image.to(self.device))
+            question = self.embedding_layer(question.to(self.device))
 
-        answer = self.model(image, question)
+            answer = self.model(image, question)
 
-        print("Answer: ", self.ans_vocab[str(F.softmax(answer, dim=1).argmax(dim=1).item())])
+        return F.softmax(answer, dim=1).cpu()
+    
+    def predict_classes(self, image_path, question, top_n=5):
 
-        return 
+        predictions = self.predict(image_path, question)
+
+        indices = predictions.argsort(descending=True)[0].numpy().tolist()
+        scores = predictions[0].numpy().round(2)
+
+        confidences = []
+        classes = []
+
+        for i in indices[:top_n]:
+            
+            confidences.append(scores[i])
+            classes.append(self.ans_vocab[str(i)])
+        
+        return confidences, classes
