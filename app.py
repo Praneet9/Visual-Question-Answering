@@ -20,7 +20,7 @@ if __name__ == '__main__':
     with open('config.yaml', 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     
-    model_path = 'models/raw_models/ModelRaw_EPOCHS_15_VAL_LOSS_1.12847.pth'
+    model_path = 'models/ModelRaw_EPOCHS_15_VAL_LOSS_1.12847.pth'
     inference = Inference(config, model_path)
     inference.load_models()
 
