@@ -8,6 +8,7 @@ import numpy as np
 from dataset import ImageDataset
 from torch.utils import data as dataloader
 import yaml
+import argparse
 
 class SaveViTFeatures():
 
@@ -60,11 +61,25 @@ class SaveViTFeatures():
                 np.save(output_path, feat.numpy())
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Save ViT features of images for training"
+    )
+    
+    parser.add_argument(
+        "--data_type", dest="data_type", type=str, required=True,
+        choices=['validation_data', 'train_data'],
+        help="The data to use. One of (validation_data, train_data)"
+    )
+
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
 
+    args = parse_args()
     with open('config.yaml', 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-    data_type = 'validation_data'
 
     SaveViTFeatures(config, 
-                    data_type).save_features()
+                    args['data_type']).save_features()

@@ -2,6 +2,7 @@ import json
 import os
 from collections import Counter
 import yaml
+import argparse
 
 class FilterDataset():
 
@@ -166,11 +167,24 @@ class FilterDataset():
         
         return filtered_data
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Filter dataset for yes/no, color and count questions"
+    )
+    
+    parser.add_argument(
+        "--data_type", dest="data_type", type=str, required=True,
+        choices=['validation_data', 'train_data'],
+        help="The data to use. One of (validation_data, train_data)"
+    )
+
+    return parser.parse_args()
+
 
 if __name__ == '__main__':
 
+    args = parse_args()
     with open('config.yaml', 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-    data_type = 'train_data'
 
-    data = FilterDataset(config, data_type).filter()
+    data = FilterDataset(config, args['data_type']).filter()
