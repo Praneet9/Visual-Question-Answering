@@ -44,3 +44,31 @@ $ python3 app.py
 **Note: You can also download the trained model and vocab+embeddings from [here](https://drive.google.com/file/d/1bJQQ3pMm58xRDnBHapQ39r3Z_nloVHEH/view?usp=sharing)**
 
 Open `http://localhost:7860` in your browser to access the app for inference.
+
+## Setting up for Training
+
+```bash
+$ sudo apt install git wget unzip -y
+$ git clone https://github.com/Praneet9/Visual-Question-Answering.git
+$ cd Visual-Question-Answering
+
+# Installing all the dependencies
+$ pip3 install -r requirements.txt
+
+# Downloading VQA v2 dataset and glove embeddings
+$ ./download_files.sh
+
+# Converting glove embeddings to readable numpy arrays
+$ python3 convert_emb_to_np.py
+
+# Save ViT features of images for training and validation
+$ python3 save_vit_features.py --data_type train_data
+$ python3 save_vit_features.py --data_type validation_data
+
+# Start model training
+$ python3 trainer.py
+```
+
+**Note: Downloading dataset, Saving ViT features and model training is very time intensive.**
+
+Happy Training! :)
