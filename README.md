@@ -45,6 +45,8 @@ $ python3 app.py
 
 Open `http://localhost:7860` in your browser to access the app for inference.
 
+---
+
 ## Setting up for Training
 
 ```bash
@@ -72,3 +74,24 @@ $ python3 trainer.py
 **Note: Downloading dataset, Saving ViT features and model training is very time intensive.**
 
 Happy Training! :)
+
+---
+
+## References
+
+- [VisualQA v2 dataset](https://visualqa.org/)
+- [Glove pretrained vectors](https://nlp.stanford.edu/projects/glove/)
+- [Pretrained ViT model](https://github.com/rwightman/pytorch-image-models)
+- [VQA Paper](https://arxiv.org/pdf/1612.00837.pdf)
+
+
+## Citation
+
+```
+@InProceedings{balanced_vqa_v2,
+author = {Yash Goyal and Tejas Khot and Douglas Summers{-}Stay and Dhruv Batra and Devi Parikh},
+title = {Making the {V} in {VQA} Matter: Elevating the Role of Image Understanding in {V}isual {Q}uestion {A}nswering},
+booktitle = {Conference on Computer Vision and Pattern Recognition (CVPR)},
+year = {2017},
+}
+```
