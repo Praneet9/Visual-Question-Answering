@@ -7,7 +7,6 @@ import torch
 from glob import glob
 import os
 from tqdm.notebook import tqdm
-from torch.utils.data import Dataset
 from torch.utils import data as dataloader
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter

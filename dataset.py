@@ -1,11 +1,7 @@
 from torch.utils.data import Dataset
-from torch.utils import data as dataloader
 from glob import glob
 import os
-import timm
 from PIL import Image
-from timm.data import resolve_data_config
-from timm.data.transforms_factory import create_transform
 import numpy as np
 from filter_dataset import FilterDataset
 import torch
