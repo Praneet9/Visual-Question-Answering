@@ -35,4 +35,3 @@ mkdir -p dataset/zip_files
 mkdir -p embeddings/zip_files
 mv dataset/*.zip dataset/zip_files/
 mv embeddings/*.zip embeddings/zip_files
-mv embeddings/*.txt embeddings/zip_files
