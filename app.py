@@ -36,4 +36,4 @@ if __name__ == '__main__':
                           ['examples/COCO_val2014_000000002759.jpg', 'How many bowls are there?'],
                           ['examples/COCO_val2014_000000004988.jpg', 'What color is the bus?'],
                           ['examples/COCO_val2014_000000003480.jpg', 'How many cows are there?']]
-                ).launch()
+                ).launch(server_name="0.0.0.0")
